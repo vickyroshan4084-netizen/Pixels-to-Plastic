@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Pixels to Plastic (P2P)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--coral:#e8533c;--dark:#0d0d0d;--mid:#2a2a2c;--light:#fdf9f6;--white:#fff;--muted:#888;--border:#e5e0d8;--success:#27ae60;--danger:#e74c3c;--fd:'Playfair Display',serif;--fb:'DM Sans',sans-serif}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--fb);background:#f5f0eb;color:var(--dark)}
+    .admin-wrap{display:flex;min-height:100vh}
+
+    /* Sidebar */
+    .sidebar{width:240px;background:var(--dark);color:#fff;padding:0;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
+    .sidebar-logo{padding:1.5rem;font-family:var(--fd);font-size:1.2rem;border-bottom:2px solid var(--coral);margin-bottom:1.5rem}
+    .sidebar-logo span{color:var(--coral)}
+    .sidebar-menu{list-style:none}
+    .sidebar-menu li{border-left:3px solid transparent;transition:border-color .2s}
+    .sidebar-menu li a{display:block;padding:.75rem 1.5rem;color:#ccc;text-decoration:none;font-size:.88rem;transition:all .2s;cursor:pointer}
+    .sidebar-menu li:hover,.sidebar-menu li.active{border-left-color:var(--coral)}
+    .sidebar-menu li:hover a,.sidebar-menu li.active a{color:var(--coral);background:rgba(232,83,60,.1)}
+
+    /* Main */
+    .main{flex:1;padding:2rem;overflow-y:auto}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;background:var(--white);padding:1.2rem 1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    .page-header h1{font-family:var(--fd);font-size:1.6rem}
+    .admin-meta{display:flex;align-items:center;gap:1rem}
+    .logout-btn{background:var(--danger);color:#fff;border:none;padding:.5rem 1.1rem;border-radius:4px;cursor:pointer;font-family:var(--fb);font-weight:600}
+
+    /* Tabs */
+    .section-tabs{display:flex;gap:.8rem;margin-bottom:1.5rem;border-bottom:2px solid var(--border)}
+    .stab{background:none;border:none;border-bottom:3px solid transparent;padding:.7rem 1.2rem;cursor:pointer;color:var(--muted);font-weight:600;font-family:var(--fb);transition:all .2s}
+    .stab.active{color:var(--coral);border-bottom-color:var(--coral)}
+
+    /* Page sections */
+    .page{display:none}
+    .page.active{display:block}
+
+    /* Stats */
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+    .stat-card{background:var(--white);padding:1.5rem;border-radius:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    .stat-card h3{font-size:2.2rem;color:var(--coral);font-weight:700}
+    .stat-card p{color:var(--muted);font-size:.88rem;margin-top:.3rem}
+
+    /* Forms */
+    .form-box{background:var(--white);padding:1.5rem;border-radius:8px;margin-bottom:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    .form-box h2{font-family:var(--fd);font-size:1.3rem;margin-bottom:1.2rem}
+    .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1rem}
+    .form-group{display:flex;flex-direction:column}
+    .form-group label{font-weight:600;margin-bottom:.35rem;font-size:.85rem}
+    .form-group input,.form-group select,.form-group textarea{padding:.65rem;border:1.5px solid var(--border);border-radius:4px;font-family:var(--fb);font-size:.9rem;transition:border-color .2s}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--coral)}
+    .form-group textarea{resize:vertical;min-height:90px}
+    .btn-submit{background:var(--coral);color:#fff;border:none;padding:.75rem 2rem;border-radius:4px;cursor:pointer;font-weight:600;font-family:var(--fb);transition:background .2s}
+    .btn-submit:hover{background:#c93d28}
+
+    /* Tables */
+    .table-wrap{background:var(--white);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:1.5rem}
+    table{width:100%;border-collapse:collapse}
+    thead{background:var(--mid);color:#fff}
+    th{padding:.9rem 1rem;text-align:left;font-weight:600;font-size:.85rem}
+    td{padding:.9rem 1rem;border-bottom:1px solid var(--border);font-size:.88rem}
+    tbody tr:hover{background:#f9f7f4}
+    .act-btn{background:none;border:none;cursor:pointer;color:var(--coral);font-weight:600;margin-right:.8rem;font-size:.85rem}
+    .act-btn.del{color:var(--danger)}
+    .act-btn:hover{text-decoration:underline}
+    .status-sel{border:1px solid var(--border);border-radius:4px;padding:.3rem .5rem;font-family:var(--fb);font-size:.82rem;cursor:pointer}
+
+    /* Badges */
+    .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .badge.green{background:#e6ffe6;color:#27ae60}
+    .badge.red{background:#ffe6e6;color:#e74c3c}
+    .badge.blue{background:#e3f2fd;color:#1565c0}
+    .badge.orange{background:#fff3e0;color:#e65100}
+
+    /* Toast */
+    .toast-wrap{position:fixed;top:20px;right:20px;z-index:2000}
+    .toast{background:var(--success);color:#fff;padding:.9rem 1.4rem;border-radius:4px;margin-bottom:.5rem;animation:slideIn .3s ease}
+    .toast.err{background:var(--danger)}
+    @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+    @media(max-width:768px){.admin-wrap{flex-direction:column}.sidebar{width:100%;height:auto;position:static}}
+  </style>
+
+  <!-- Firebase Configuration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvtXnRyLVdG98uXUVsuYmWBpeFUfGEzJ0",
+      authDomain: "pixal-to-plastic.firebaseapp.com",
+      projectId: "pixal-to-plastic",
+      storageBucket: "pixal-to-plastic.firebasestorage.app",
+      messagingSenderId: "269644781419",
+      appId: "1:269644781419:web:7409155bd0ac5009d0de2e"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+  </script>
+</head>
+<body>
+
+<div class="admin-wrap">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Pixels to <span>Plastic</span></div>
+    <ul class="sidebar-menu">
+      <li class="active"><a onclick="showPage('dashboard')">📊 Dashboard</a></li>
+      <li><a onclick="showPage('products')">📦 Products</a></li>
+      <li><a onclick="showPage('categories')">🏷️ Categories</a></li>
+      <li><a onclick="showPage('discounts')">💰 Discounts</a></li>
+      <li><a onclick="showPage('orders')">📋 Orders</a></li>
+      <li><a onclick="showPage('export')">⬇️ Export</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-header">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="admin-meta">
+        <span id="adminName">Admin</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- ── Dashboard ── -->
+    <div id="dashboard" class="page active">
+      <div class="stats">
+        <div class="stat-card"><h3 id="statProducts">—</h3><p>Total Products</p></div>
+        <div class="stat-card"><h3 id="statOrders">—</h3><p>Total Orders</p></div>
+        <div class="stat-card"><h3 id="statCategories">—</h3><p>Categories</p></div>
+        <div class="stat-card"><h3 id="statDiscounts">—</h3><p>Active Discounts</p></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="recentOrders"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Products ── -->
+    <div id="products" class="page">
+      <div class="section-tabs">
+        <button class="stab active" onclick="switchStab(this,'addProduct')">Add Product</button>
+        <button class="stab"        onclick="switchStab(this,'listProducts');loadProducts()">Products List</button>
+      </div>
+      <div id="addProduct">
+        <div class="form-box">
+          <h2>Add New Product</h2>
+          <div class="form-row">
+            <div class="form-group"><label>Product Title</label><input id="pTitle" required></div>
+            <div class="form-group"><label>Category</label><select id="pCategory"><option value="">Select category…</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Price (₹)</label><input type="number" id="pPrice" step="0.01"></div>
+            <div class="form-group"><label>Stock</label><input type="number" id="pStock" value="10"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Discount</label><select id="pDiscount"><option value="">No discount</option></select></div>
+            <div class="form-group"><label>Image URL</label><input type="url" id="pImage" placeholder="https://…"></div>
+          </div>
+          <div class="form-group"><label>Description</label><textarea id="pDesc"></textarea></div>
+          <button class="btn-submit" onclick="addProduct()">Add Product</button>
+        </div>
+      </div>
+      <div id="listProducts" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Title</th><th>Category</th><th>Price</th><th>Final</th><th>Stock</th><th>Actions</th></tr></thead>
+            <tbody id="productsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Categories ── -->
+    <div id="categories" class="page">
+      <div class="section-tabs">
+        <button class="stab active" onclick="switchStab(this,'addCategory')">Add Category</button>
+        <button class="stab"        onclick="switchStab(this,'listCategories');loadCategories()">Categories List</button>
+      </div>
+      <div id="addCategory">
+        <div class="form-box">
+          <h2>Add Product Category</h2>
+          <div class="form-row">
+            <div class="form-group"><label>Main Category</label><select id="mainCatSel"></select></div>
+            <div class="form-group"><label>Sub-Category Name</label><input id="catName"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Base Price (₹)</label><input type="number" id="catPrice" step="0.01"></div>
+          </div>
+          <div class="form-group"><label>Description</label><textarea id="catDesc"></textarea></div>
+          <button class="btn-submit" onclick="addCategory()">Add Category</button>
+        </div>
+      </div>
+      <div id="listCategories" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Main Category</th><th>Sub-Category</th><th>Base Price</th><th>Actions</th></tr></thead>
+            <tbody id="categoriesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Discounts ── -->
+    <div id="discounts" class="page">
+      <div class="section-tabs">
+        <button class="stab active" onclick="switchStab(this,'addDiscount')">Add Discount</button>
+        <button class="stab"        onclick="switchStab(this,'listDiscounts');loadDiscounts()">Discounts List</button>
+      </div>
+      <div id="addDiscount">
+        <div class="form-box">
+          <h2>Add Discount</h2>
+          <div class="form-row">
+            <div class="form-group"><label>Discount Name</label><input id="discName"></div>
+            <div class="form-group"><label>Type</label>
+              <select id="discType">
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed Amount (₹)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Value</label><input type="number" id="discValue" step="0.01"></div>
+            <div class="form-group"><label>Start Date (optional)</label><input type="datetime-local" id="discStart"></div>
+          </div>
+          <div class="form-group"><label>End Date (optional)</label><input type="datetime-local" id="discEnd"></div>
+          <button class="btn-submit" onclick="addDiscount()">Add Discount</button>
+        </div>
+      </div>
+      <div id="listDiscounts" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Valid</th><th>Actions</th></tr></thead>
+            <tbody id="discountsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Orders ── -->
+    <div id="orders" class="page">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order #</th><th>Customer</th><th>Phone</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="ordersTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Export ── -->
+    <div id="export" class="page">
+      <div class="form-box">
+        <h2>Export Data</h2>
+        <p style="margin-bottom:1.2rem;color:var(--muted)">Download all product data as a CSV file for Excel / Google Sheets.</p>
+        <button class="btn-submit" onclick="exportCSV()">⬇️ Export Products to CSV</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- API Client Library -->
+<script src="api-client.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════
+
+// ── Auth Guard ───────────────────────────────────────────
+if (!isAuthenticated() || !isAdmin()) {
+  window.location.href = 'admin-login.html';
+}
+
+// ── Helpers ──────────────────────────────────────────────
+const fmt = n => '₹' + parseFloat(n).toLocaleString('en-IN', {minimumFractionDigits:2});
+
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type==='error'?'err':'');
+  el.textContent = msg;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ── Navigation ───────────────────────────────────────────
+const titles = {dashboard:'Dashboard',products:'Products',categories:'Categories',discounts:'Discounts',orders:'Orders',export:'Export'};
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  document.getElementById('pageTitle').textContent = titles[name]||name;
+  document.querySelectorAll('.sidebar-menu li a').forEach(a => {
+    if (a.getAttribute('onclick')?.includes(name)) a.parentElement.classList.add('active');
+  });
+  if (name==='dashboard') loadDashboard();
+  if (name==='orders')    loadOrders();
+  if (name==='products') { loadProductCategories(); loadProductDiscounts(); }
+  if (name==='categories') loadMainCategories();
+}
+
+function switchStab(el, secId) {
+  const parent = el.parentElement;
+  parent.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const page = el.closest('.page');
+  page.querySelectorAll(':scope > div[id]').forEach(d => {
+    if (d.classList.contains('section-tabs')) return;
+    d.style.display = d.id===secId ? 'block' : 'none';
+  });
+}
+
+// ── Dashboard ────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [prods, orders, cats, discs] = await Promise.all([
+      api.get(API_CONFIG.PRODUCTS.LIST + '?limit=1').catch(()=>({count:0})),
+      api.get(API_CONFIG.ORDERS.LIST).catch(()=>[]),
+      api.get(API_CONFIG.CATEGORIES.LIST + '?limit=1').catch(()=>({count:0})),
+      api.get(API_CONFIG.DISCOUNTS.LIST).catch(()=>[]),
+    ]);
+    document.getElementById('statProducts').textContent   = prods.count ?? (prods.results||prods).length ?? 0;
+    document.getElementById('statOrders').textContent     = Array.isArray(orders) ? orders.length : (orders.count||0);
+    document.getElementById('statCategories').textContent = cats.count ?? (cats.results||cats).length ?? 0;
+    document.getElementById('statDiscounts').textContent  = (Array.isArray(discs)?discs:(discs.results||[])).filter(d=>d.is_active).length;
+
+    const list  = Array.isArray(orders) ? orders : (orders.results||[]);
+    const tbody = document.getElementById('recentOrders');
+    tbody.innerHTML = list.slice(0,8).map(o => `
+      <tr>
+        <td>#${o.id}</td>
+        <td>${o.guest_name}</td>
+        <td>${fmt(o.total)}</td>
+        <td>${o.payment_method}</td>
+        <td>${statusBadge(o.status)}</td>
+        <td>${new Date(o.created_at).toLocaleDateString('en-IN')}</td>
+      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#888;padding:1.5rem">No orders yet</td></tr>';
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function statusBadge(s) {
+  const map = {pending:'orange',paid:'blue',processing:'blue',shipped:'blue',delivered:'green',cancelled:'red'};
+  return `<span class="badge ${map[s]||'orange'}">${s}</span>`;
+}
+
+// ── Products ─────────────────────────────────────────────
+async function loadProductCategories() {
+  try {
+    const data = await api.get(API_CONFIG.CATEGORIES.LIST);
+    const list = data.results || data;
+    document.getElementById('pCategory').innerHTML =
+      '<option value="">Select category…</option>' +
+      list.map(c => `<option value="${c.id}">${c.main_category_name} › ${c.name}</option>`).join('');
+  } catch {}
+}
+
+async function loadProductDiscounts() {
+  try {
+    const data = await api.get(API_CONFIG.DISCOUNTS.LIST);
+    const list = (data.results||data).filter(d=>d.is_active);
+    document.getElementById('pDiscount').innerHTML =
+      '<option value="">No discount</option>' +
+      list.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+  } catch {}
+}
+
+async function loadProducts() {
+  try {
+    const data = await api.get(API_CONFIG.PRODUCTS.LIST);
+    const list = data.results || data;
+    document.getElementById('productsTable').innerHTML = list.map(p => `
+      <tr>
+        <td>${p.title}</td>
+        <td>${p.category_details?.name||'—'}</td>
+        <td>${fmt(p.price)}</td>
+        <td>${fmt(p.final_price)}</td>
+        <td>${p.stock}</td>
+        <td>
+          <button class="act-btn" onclick="editProductPrompt(${p.id},'${p.title}')">Edit</button>
+          <button class="act-btn del" onclick="deleteProduct(${p.id})">Delete</button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#888">No products yet — add one above!</td></tr>';
+  } catch(e) { toast('Error loading products','error'); }
+}
+
+async function addProduct() {
+  const title    = document.getElementById('pTitle').value.trim();
+  const category = document.getElementById('pCategory').value;
+  const price    = document.getElementById('pPrice').value;
+  const stock    = document.getElementById('pStock').value;
+  if (!title||!category||!price) { toast('Fill in Title, Category and Price','error'); return; }
+  const body = { title, description:document.getElementById('pDesc').value, price:parseFloat(price), category:parseInt(category), stock:parseInt(stock)||0, image_url:document.getElementById('pImage').value, is_active:true };
+  const discId = document.getElementById('pDiscount').value;
+  if (discId) body.discount = parseInt(discId);
+  try {
+    await api.post(API_CONFIG.PRODUCTS.LIST, body);
+    toast('✓ Product added successfully');
+    ['pTitle','pDesc','pPrice','pImage'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('pStock').value = '10';
+  } catch(e) { toast(formatErrorMessage(e),'error'); }
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  try {
+    await api.delete(API_CONFIG.PRODUCTS.DELETE(id));
+    toast('✓ Product deleted');
+    loadProducts();
+  } catch { toast('Error deleting product','error'); }
+}
+
+function editProductPrompt(id, title) {
+  const newPrice = prompt(`New price for "${title}" (₹):`, '');
+  if (newPrice === null) return;
+  api.patch(API_CONFIG.PRODUCTS.UPDATE(id), {price:parseFloat(newPrice)})
+    .then(() => { toast('✓ Price updated'); loadProducts(); })
+    .catch(() => toast('Error updating price','error'));
+}
+
+// ── Categories ───────────────────────────────────────────
+async function loadMainCategories() {
+  try {
+    const data = await api.get(API_CONFIG.MAIN_CATEGORIES.LIST);
+    const list = data.results || data;
+    document.getElementById('mainCatSel').innerHTML = list.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  } catch {}
+}
+
+async function loadCategories() {
+  try {
+    const data = await api.get(API_CONFIG.CATEGORIES.LIST);
+    const list = data.results || data;
+    document.getElementById('categoriesTable').innerHTML = list.map(c => `
+      <tr>
+        <td>${c.main_category_name}</td>
+        <td>${c.name}</td>
+        <td>${fmt(c.base_price)}</td>
+        <td><button class="act-btn del" onclick="deleteCategory(${c.id})">Delete</button></td>
+      </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:#888">No categories yet</td></tr>';
+  } catch { toast('Error loading categories','error'); }
+}
+
+async function addCategory() {
+  const main = document.getElementById('mainCatSel').value;
+  const name = document.getElementById('catName').value.trim();
+  if (!main||!name) { toast('Select main category and enter a name','error'); return; }
+  const body = { main_category:parseInt(main), name, description:document.getElementById('catDesc').value, base_price:parseFloat(document.getElementById('catPrice').value)||0, is_active:true };
+  try {
+    await api.post(API_CONFIG.CATEGORIES.LIST, body);
+    toast('✓ Category added');
+    document.getElementById('catName').value=''; document.getElementById('catDesc').value=''; document.getElementById('catPrice').value='';
+    loadProductCategories();
+  } catch(e) { toast(formatErrorMessage(e),'error'); }
+}
+
+async function deleteCategory(id) {
+  if (!confirm('Delete this category?')) return;
+  try {
+    await api.delete(API_CONFIG.CATEGORIES.DELETE(id));
+    toast('✓ Category deleted');
+    loadCategories();
+  } catch { toast('Error','error'); }
+}
+
+// ── Discounts ────────────────────────────────────────────
+async function loadDiscounts() {
+  try {
+    const data = await api.get(API_CONFIG.DISCOUNTS.LIST);
+    const list = data.results || data;
+    document.getElementById('discountsTable').innerHTML = list.map(d => `
+      <tr>
+        <td>${d.name}</td>
+        <td>${d.discount_type}</td>
+        <td>${d.discount_value}${d.discount_type==='percentage'?'%':'₹'}</td>
+        <td>${d.is_valid ? '<span class="badge green">Active</span>' : '<span class="badge red">Inactive</span>'}</td>
+        <td><button class="act-btn del" onclick="deleteDiscount(${d.id})">Delete</button></td>
+      </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:#888">No discounts yet</td></tr>';
+  } catch { toast('Error loading discounts','error'); }
+}
+
+async function addDiscount() {
+  const name  = document.getElementById('discName').value.trim();
+  const value = document.getElementById('discValue').value;
+  if (!name||!value) { toast('Fill in Name and Value','error'); return; }
+  const body = {
+    name, discount_type:document.getElementById('discType').value,
+    discount_value:parseFloat(value),
+    start_date:document.getElementById('discStart').value||null,
+    end_date:document.getElementById('discEnd').value||null,
+    is_active:true
+  };
+  try {
+    await api.post(API_CONFIG.DISCOUNTS.LIST, body);
+    toast('✓ Discount added');
+    ['discName','discValue','discStart','discEnd'].forEach(id => document.getElementById(id).value='');
+  } catch(e) { toast(formatErrorMessage(e),'error'); }
+}
+
+async function deleteDiscount(id) {
+  if (!confirm('Delete this discount?')) return;
+  try {
+    await api.delete(API_CONFIG.DISCOUNTS.DELETE(id));
+    toast('✓ Discount deleted');
+    loadDiscounts();
+  } catch { toast('Error','error'); }
+}
+
+// ── Orders ───────────────────────────────────────────────
+async function loadOrders() {
+  try {
+    const data = await api.get(API_CONFIG.ORDERS.LIST);
+    const list = Array.isArray(data) ? data : (data.results||[]);
+    document.getElementById('ordersTable').innerHTML = list.map(o => `
+      <tr>
+        <td>#${o.id}</td>
+        <td>${o.guest_name}<br><small style="color:#888">${o.guest_email}</small></td>
+        <td>${o.guest_phone}</td>
+        <td>${fmt(o.total)}</td>
+        <td>${o.payment_method}</td>
+        <td>
+          <select class="status-sel" onchange="updateStatus(${o.id},this.value)">
+            ${['pending','paid','processing','shipped','delivered','cancelled'].map(s =>
+              `<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td>${new Date(o.created_at).toLocaleDateString('en-IN')}</td>
+      </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:#888">No orders yet</td></tr>';
+  } catch(e) { console.error(e); toast('Error loading orders','error'); }
+}
+
+async function updateStatus(id, status) {
+  try {
+    await api.patch(`/orders/${id}/status/`, {status});
+    toast(`✓ Order #${id} → ${status}`);
+  } catch { toast('Error updating status','error'); }
+}
+
+// ── Export ───────────────────────────────────────────────
+function exportCSV() {
+  const baseUrl = API_CONFIG.BASE_URL;
+  window.open(baseUrl + '/products/products/export_csv/', '_blank');
+  toast('✓ CSV download started');
+}
+
+// Init ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const user = getCurrentUser();
+  if (user) document.getElementById('adminName').textContent = user.username;
+  loadDashboard();
+  loadProductCategories();
+  loadProductDiscounts();
+  loadMainCategories();
+});
+</script>
+</body>
+</html>
