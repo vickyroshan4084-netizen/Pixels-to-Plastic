@@ -40,27 +40,23 @@ input:focus{outline:none;border-color:var(--coral)}
 .center-link a{color:var(--coral);font-weight:600;text-decoration:none}
 .email-sent{display:none;align-items:center;gap:8px;background:#f0fff4;border:1px solid #b7ebc8;border-radius:6px;padding:.7rem .9rem;margin-top:1rem;font-size:.82rem;color:#27ae60}
 .email-sent.show{display:flex}
-.badge{display:inline-block;background:#fff3e0;border:1px solid #ffcc80;color:#e65100;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:5px;vertical-align:middle;letter-spacing:.03em}
+.badge{display:inline-block;background:#fff3e0;border:1px solid #ffcc80;color:#e65100;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:5px;vertical-align:middle}
 </style>
 </head>
 <body>
-
 <div class="card">
   <div class="back"><a href="index.html">← Back to Shop</a></div>
-
   <div class="logo">
     <h1>Pixels to <span>Plastic</span></h1>
     <p>Staff Portal</p>
   </div>
-
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('customerLogin',this)">Customer Login</button>
     <button class="tab-btn" onclick="switchTab('adminLogin',this)">Admin Login</button>
   </div>
-
   <div id="alert" class="alert"></div>
 
-  <!-- ── CUSTOMER LOGIN — uses Django backend (unchanged) ── -->
+  <!-- CUSTOMER LOGIN — Django backend -->
   <div id="customerLogin" class="tab-content active">
     <div class="form-group"><label>Username</label><input type="text" id="cUsername"></div>
     <div class="form-group"><label>Password</label><input type="password" id="cPassword"></div>
@@ -68,11 +64,11 @@ input:focus{outline:none;border-color:var(--coral)}
     <div class="center-link">New here? <a href="index.html">Register on the shop page</a></div>
   </div>
 
-  <!-- ── ADMIN LOGIN — uses Firebase (no Django needed) ── -->
+  <!-- ADMIN LOGIN — Firebase Auth (no Django needed) -->
   <div id="adminLogin" class="tab-content">
     <div class="form-group">
       <label>Email <span class="badge">🔥 Firebase</span></label>
-      <input type="email" id="aEmail" placeholder="admin@youremail.com" autocomplete="username">
+      <input type="email" id="aEmail" placeholder="vickyroshan4084@gmail.com" autocomplete="username">
     </div>
     <div class="form-group">
       <label>Password</label>
@@ -89,13 +85,11 @@ input:focus{outline:none;border-color:var(--coral)}
     </div>
 
     <div class="hint-box">
-      <strong>🔑 How to create your admin account (one-time, 2 minutes):</strong>
-      1. Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a><br>
-      2. Open project → <strong>pixal-to-plastic</strong><br>
-      3. Click <strong>Authentication</strong> → <strong>Users</strong> tab → <strong>Add user</strong><br>
-      4. Enter any email &amp; password you want → click <strong>Add user</strong><br>
-      5. Come back here and login with that email &amp; password ✅<br>
-      <span style="color:#aaa;font-size:.8rem">No terminal. No commands. Done in the browser.</span>
+      <strong>🔑 How to create your admin account:</strong>
+      1. Go to <a href="https://console.firebase.google.com/project/pixal-to-plastic-5ed95/authentication/users" target="_blank">Firebase Console → Authentication → Users</a><br>
+      2. Click <strong>Add user</strong><br>
+      3. Enter email: <strong>vickyroshan4084@gmail.com</strong> &amp; a password<br>
+      4. Click <strong>Add user</strong> → login here ✅
     </div>
   </div>
 </div>
@@ -105,23 +99,25 @@ input:focus{outline:none;border-color:var(--coral)}
 
 <!-- Firebase SDKs -->
 <script type="module">
-  import { initializeApp }                       from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+  import { initializeApp }                       from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
+  // ✅ CORRECT Firebase project: pixal-to-plastic-5ed95
   const firebaseConfig = {
-    apiKey:            "AIzaSyDvtXnRyLVdG98uXUVsuYmWBpeFUfGEzJ0",
-    authDomain:        "pixal-to-plastic.firebaseapp.com",
-    projectId:         "pixal-to-plastic",
-    storageBucket:     "pixal-to-plastic.firebasestorage.app",
-    messagingSenderId: "269644781419",
-    appId:             "1:269644781419:web:7409155bd0ac5009d0de2e"
+    apiKey:            "AIzaSyBimWAh2AwDdTjGyCPoYekVvzohbM1V77c",
+    authDomain:        "pixal-to-plastic-5ed95.firebaseapp.com",
+    projectId:         "pixal-to-plastic-5ed95",
+    storageBucket:     "pixal-to-plastic-5ed95.firebasestorage.app",
+    messagingSenderId: "78935535199",
+    appId:             "1:78935535199:web:2d76efd3dfdd8de3fdb5ea",
+    measurementId:     "G-V0N556RMWN"
   };
 
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
   /* ================================================================
-     EMAILJS — fill these 3 values once (https://www.emailjs.com)
+     EMAILJS — fill these 3 values from https://www.emailjs.com
      Template "To Email" → vickyroshan4084@gmail.com
      Template variables  → {{admin_email}}, {{login_date}}, {{login_time}}
   ================================================================ */
@@ -130,7 +126,7 @@ input:focus{outline:none;border-color:var(--coral)}
   const EJS_KEY      = 'YOUR_PUBLIC_KEY';
 
   async function notifyOwner(email) {
-    if (EJS_SERVICE === 'YOUR_SERVICE_ID') return; // skip until configured
+    if (EJS_SERVICE === 'YOUR_SERVICE_ID') return;
     try {
       emailjs.init(EJS_KEY);
       await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
@@ -145,11 +141,10 @@ input:focus{outline:none;border-color:var(--coral)}
     }
   }
 
-  /* Admin login with Firebase — no Django, no terminal, no commands */
+  // Admin login with Firebase
   window.doAdminLogin = async function() {
     const email    = document.getElementById('aEmail').value.trim();
     const password = document.getElementById('aPassword').value;
-
     if (!email || !password) { showAlert('Enter your email and password'); return; }
 
     const btn = document.getElementById('adminBtn');
@@ -160,9 +155,8 @@ input:focus{outline:none;border-color:var(--coral)}
       const cred  = await signInWithEmailAndPassword(auth, email, password);
       const token = await cred.user.getIdToken();
 
-      // Save to localStorage so admin.html knows user is logged in
       localStorage.setItem('access_token', token);
-      localStorage.setItem('firebase_uid', cred.user.uid);
+      localStorage.setItem('firebase_uid',  cred.user.uid);
       localStorage.setItem('user', JSON.stringify({
         uid:      cred.user.uid,
         email:    cred.user.email,
@@ -170,22 +164,21 @@ input:focus{outline:none;border-color:var(--coral)}
         is_staff: true,
       }));
 
-      // Send login alert email to owner
       await notifyOwner(email);
-
       showAlert('✓ Welcome back! Redirecting…', 'success');
       setTimeout(() => window.location.href = 'admin.html', 1400);
 
     } catch (err) {
-      const msg = {
-        'auth/user-not-found':     'No account found. Create one in Firebase Console → Authentication → Add user.',
-        'auth/wrong-password':     'Wrong password. Please try again.',
-        'auth/invalid-email':      'Please enter a valid email address.',
-        'auth/too-many-requests':  'Too many attempts. Wait a few minutes and try again.',
-        'auth/invalid-credential': 'Wrong email or password. Please try again.',
+      const errors = {
+        'auth/user-not-found':         'No admin account found. Go to Firebase Console → Authentication → Add user.',
+        'auth/wrong-password':         'Wrong password. Please try again.',
+        'auth/invalid-email':          'Please enter a valid email address.',
+        'auth/too-many-requests':      'Too many attempts. Wait a few minutes.',
+        'auth/invalid-credential':     'Wrong email or password.',
+        'auth/configuration-not-found':'Email/Password sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → Email/Password → Enable.',
         'auth/network-request-failed': 'Network error. Check your internet connection.',
-      }[err.code] || ('Error: ' + err.message);
-      showAlert(msg);
+      };
+      showAlert(errors[err.code] || 'Error: ' + err.message);
       btn.disabled = false;
       btn.textContent = 'Login as Admin';
     }
@@ -198,9 +191,7 @@ input:focus{outline:none;border-color:var(--coral)}
 
 <!-- API Client (for customer login only) -->
 <script src="api-client.js"></script>
-
 <script>
-  /* Customer login — uses Django backend, unchanged */
   async function doCustomerLogin() {
     const username = document.getElementById('cUsername').value.trim();
     const password = document.getElementById('cPassword').value;
@@ -222,18 +213,14 @@ input:focus{outline:none;border-color:var(--coral)}
     el.classList.add('active');
     clearAlert();
   }
-
   function showAlert(msg, type = 'error') {
     const a = document.getElementById('alert');
     a.textContent = msg;
     a.className = 'alert ' + type;
   }
-
   function clearAlert() {
     document.getElementById('alert').className = 'alert';
   }
-
-  // Enter key support
   document.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
     if (document.getElementById('adminLogin').classList.contains('active')) window.doAdminLogin();
