@@ -4,6 +4,8 @@ from django.db import transaction
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.http import HttpResponse
+import csv
 from cart.views import get_or_create_cart
 from cart.models import CartItem
 from products.models import Product
@@ -152,3 +154,29 @@ class OrderStatusUpdateView(APIView):
         order.status = new_status
         order.save()
         return Response(OrderSerializer(order).data)
+
+
+class ExportOrdersCSVView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="p2p_orders.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Order ID', 'Customer Name', 'Email', 'Phone', 'Address', 'City', 'State', 'Pincode', 'Payment Method', 'Status', 'Total', 'Date'])
+        for o in Order.objects.all().order_by('-created_at'):
+            writer.writerow([
+                o.id,
+                o.guest_name,
+                o.guest_email,
+                o.guest_phone,
+                o.shipping_address,
+                o.city,
+                o.state,
+                o.pincode,
+                o.payment_method,
+                o.status,
+                o.total,
+                o.created_at.strftime('%d/%m/%Y %H:%M')
+            ])
+        return response
