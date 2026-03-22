@@ -109,7 +109,13 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-CORS_ALLOW_ALL_ORIGINS  = True   # allows Vercel + any other frontend
+CORS_ALLOW_ALL_ORIGINS  = False
+CORS_ALLOWED_ORIGINS = [
+    'https://pixels-to-plastic.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+]
 CORS_ALLOW_CREDENTIALS  = True
 CORS_ALLOW_HEADERS = [
     'accept', 'accept-encoding', 'authorization',
