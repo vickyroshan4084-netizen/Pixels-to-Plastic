@@ -930,6 +930,7 @@
       </ul>
       <div class="nav-auth" style="display:flex;gap:0.7rem;align-items:center;">
         <button class="btn-login" id="authBtn" onclick="openAuthModal()">Login</button>
+        <button class="btn-login" id="logoutBtn" style="display:none; border-color:var(--muted); color:var(--muted);" onclick="doLogout()">Logout</button>
         <a href="admin-login.html" class="btn-login" style="border-color:var(--coral);color:var(--coral);text-decoration:none;font-weight:700;">⚙️ Admin Login</a>
         <button class="cart-btn" onclick="toggleCart()">
           🛒 Cart <span class="cart-count" id="cartCount">0</span>
@@ -1495,6 +1496,7 @@
         localStorage.setItem('access_token', res.access);
         localStorage.setItem('user', JSON.stringify(res.user || { username: document.getElementById('loginUser').value }));
         document.getElementById('authBtn').textContent = res.user.username;
+        document.getElementById('logoutBtn').style.display = 'inline-block';
         closeAuthModal();
         toast('Logged in!', 'success');
         fetchCart();
@@ -1516,12 +1518,22 @@
         localStorage.setItem('access_token', res.access);
         localStorage.setItem('user', JSON.stringify(res.user));
         document.getElementById('authBtn').textContent = res.user.username;
+        document.getElementById('logoutBtn').style.display = 'inline-block';
         closeAuthModal();
         toast('Account created! Welcome 🎉', 'success');
       } catch (error) {
         toast(formatErrorMessage(error), 'error');
       }
     }
+
+    function doLogout() {
+      if (!confirm("Are you sure you want to log out?")) return;
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      window.location.reload();
+    }
+
     async function loadPromo() {
       try {
         const data = await api.get('/products/promotions/active/');
@@ -1560,6 +1572,7 @@
       
       if (user) {
         document.getElementById('authBtn').textContent = user.username;
+        document.getElementById('logoutBtn').style.display = 'inline-block';
         
         // Super User Integration
         if (user.is_superuser || user.is_staff || user.is_admin) {
