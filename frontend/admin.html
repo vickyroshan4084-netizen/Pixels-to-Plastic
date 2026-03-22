@@ -191,17 +191,15 @@
             <div class="form-group"><label>Main Category</label><select id="mainCatSel"></select></div>
             <div class="form-group"><label>Sub-Category Name</label><input id="catName"></div>
           </div>
-          <div class="form-row">
-            <div class="form-group"><label>Base Price (₹)</label><input type="number" id="catPrice" step="0.01"></div>
-          </div>
-          <div class="form-group"><label>Description</label><textarea id="catDesc"></textarea></div>
+          <div class="form-group"><label>Category Picture <span style="color:#888;font-weight:400;font-size:.8rem">(for customer reference)</span></label><input type="file" id="catImage" accept="image/*" style="padding:.5rem;border:1.5px dashed #e5e0d8;border-radius:4px;cursor:pointer"></div>
+          <div class="form-group" style="margin-top:.8rem"><label>Description</label><textarea id="catDesc"></textarea></div>
           <button class="btn-submit" onclick="addCategory()">Add Category</button>
         </div>
       </div>
       <div id="listCategories" style="display:none">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Main Category</th><th>Sub-Category</th><th>Base Price</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Main Category</th><th>Sub-Category</th><th>Image</th><th>Actions</th></tr></thead>
             <tbody id="categoriesTable"></tbody>
           </table>
         </div>
@@ -441,11 +439,11 @@ async function loadCategories() {
   try {
     const data = await api.get(API_CONFIG.CATEGORIES.LIST);
     const list = data.results || data;
-    document.getElementById('categoriesTable').innerHTML = list.map(c => `
-      <tr>
+    document.getElementById('categoriesTable').innerHTML = list.map(c =>
+      `<tr>
         <td>${c.main_category_name}</td>
         <td>${c.name}</td>
-        <td>${fmt(c.base_price)}</td>
+        <td>${c.image ? `<img src="${c.image}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">` : '<span style="color:#bbb">No image</span>'}</td>
         <td><button class="act-btn del" onclick="deleteCategory(${c.id})">Delete</button></td>
       </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:#888">No categories yet</td></tr>';
   } catch { toast('Error loading categories','error'); }
@@ -455,11 +453,38 @@ async function addCategory() {
   const main = document.getElementById('mainCatSel').value;
   const name = document.getElementById('catName').value.trim();
   if (!main||!name) { toast('Select main category and enter a name','error'); return; }
-  const body = { main_category:parseInt(main), name, description:document.getElementById('catDesc').value, base_price:parseFloat(document.getElementById('catPrice').value)||0, is_active:true };
+
+  const imageFile = document.getElementById('catImage').files[0];
+  let body;
+  if (imageFile) {
+    // Use FormData to send image file
+    body = new FormData();
+    body.append('main_category', parseInt(main));
+    body.append('name', name);
+    body.append('description', document.getElementById('catDesc').value);
+    body.append('is_active', true);
+    body.append('image', imageFile);
+  } else {
+    body = { main_category:parseInt(main), name, description:document.getElementById('catDesc').value, is_active:true };
+  }
+
   try {
-    await api.post(API_CONFIG.CATEGORIES.LIST, body);
+    if (body instanceof FormData) {
+      // Post with FormData (multipart) - use fetch directly
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(API_CONFIG.CATEGORIES.LIST, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body
+      });
+      if (!res.ok) throw new Error(await res.text());
+    } else {
+      await api.post(API_CONFIG.CATEGORIES.LIST, body);
+    }
     toast('✓ Category added');
-    document.getElementById('catName').value=''; document.getElementById('catDesc').value=''; document.getElementById('catPrice').value='';
+    document.getElementById('catName').value='';
+    document.getElementById('catDesc').value='';
+    document.getElementById('catImage').value='';
     loadProductCategories();
   } catch(e) { toast(formatErrorMessage(e),'error'); }
 }
