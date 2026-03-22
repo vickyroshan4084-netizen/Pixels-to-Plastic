@@ -112,6 +112,12 @@ async function doAdminLogin() {
   
   if (!username || !password) { showAlert('Enter Firebase email and password'); return; }
 
+  // Ensure Firebase is initialized
+  if (!window.fbAuth || !window.fbSignIn) {
+    showAlert('Firebase is still loading... Please wait 3 seconds and try again.');
+    return;
+  }
+
   const btn = document.getElementById('adminBtn');
   btn.disabled = true; btn.textContent = 'Authenticating via Firebase…';
 
@@ -132,15 +138,16 @@ async function doAdminLogin() {
     localStorage.setItem('user', JSON.stringify(loginData.user));
     
     showAlert('✓ Admin recognized! Access Granted. Redirecting…', 'success');
-    setTimeout(() => window.location.href = 'admin.html', 1500);
+    // Use timestamp to force-refresh admin.html (bypass cache)
+    setTimeout(() => window.location.href = 'admin.html?v=' + Date.now(), 1200);
 
   } catch (error) {
+    console.error(error);
     if (error.code) {
         showAlert('Firebase Error: ' + error.code);
     } else {
         showAlert(formatErrorMessage(error));
     }
-  } finally {
     btn.disabled = false;
     btn.textContent = 'Connect to Backend server';
   }
