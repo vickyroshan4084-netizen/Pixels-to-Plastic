@@ -102,21 +102,21 @@ class PromotionViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({}, status=status.HTTP_404_NOT_FOUND)
 
 
-class PaymentMethodViewSet(viewsets.ReadOnlyModelViewSet):
+class PaymentMethodViewSet(viewsets.ModelViewSet):
     queryset = PaymentMethod.objects.filter(is_active=True)
     serializer_class = PaymentMethodSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 
-class SiteSettingsViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = SiteSettings.objects.filter(is_active=True)
+class SiteSettingsViewSet(viewsets.ModelViewSet):
+    queryset = SiteSettings.objects.all()
     serializer_class = SiteSettingsSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
     @action(detail=False, methods=['get'])
     def active(self, request):
-        settings = self.queryset.first()
+        settings = SiteSettings.objects.filter(is_active=True).first()
         if not settings:
-            # Create a default one if none exists
             settings = SiteSettings.objects.create()
         serializer = self.get_serializer(settings)
         return Response(serializer.data)
-    permission_classes = [permissions.AllowAny]
