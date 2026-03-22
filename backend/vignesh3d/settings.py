@@ -82,7 +82,7 @@ TEMPLATES = [{
 # ── Database ──────────────────────────────────────────────────────────────────
 # LOCAL  → SQLite (automatic, zero setup)
 # RENDER → PostgreSQL (Render auto-sets DATABASE_URL when you add a DB)
-_db_url = os.environ.get('DATABASE_URL', 'postgresql://p2p_shop_user:Tn1C6kbjuEYxDmMHFGeG7yLh7QNzLWoM@dpg-d700qfk50q8c739tssg0-a.oregon-postgres.render.com/p2p_shop')
+_db_url = os.environ.get('DATABASE_URL', '')
 if _db_url:
     DATABASES = {
         'default': dj_database_url.parse(_db_url, conn_max_age=600, conn_health_checks=True)
