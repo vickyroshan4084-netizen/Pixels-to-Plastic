@@ -108,12 +108,13 @@
   <aside class="sidebar">
     <div class="sidebar-logo">Pixels to <span>Plastic</span></div>
     <ul class="sidebar-menu">
-      <li class="active"><a onclick="showPage('dashboard')">📊 Dashboard</a></li>
+      <li class="active"><a onclick="showPage('dashboard')">🏠 Dashboard</a></li>
       <li><a onclick="showPage('products')">📦 Products</a></li>
       <li><a onclick="showPage('categories')">🏷️ Categories</a></li>
       <li><a onclick="showPage('discounts')">💰 Discounts</a></li>
       <li><a onclick="showPage('orders')">📋 Orders</a></li>
-      <li><a onclick="showPage('export')">⬇️ Export</a></li>
+      <li><a onclick="showPage('settings')">⚙️ Settings</a></li>
+      <li><a onclick="showPage('export')">⬆️ Export</a></li>
     </ul>
   </aside>
 
@@ -162,7 +163,7 @@
           </div>
           <div class="form-row">
             <div class="form-group"><label>Discount</label><select id="pDiscount"><option value="">No discount</option></select></div>
-            <div class="form-group"><label>Image URL</label><input type="url" id="pImage" placeholder="https://…"></div>
+            <div class="form-group"><label>Product Image <span style="color:#888;font-weight:400;font-size:.8rem">(upload file)</span></label><input type="file" id="pImage" accept="image/*" style="padding:.5rem;border:1.5px dashed #e5e0d8;border-radius:4px;cursor:pointer"></div>
           </div>
           <div class="form-group"><label>Description</label><textarea id="pDesc"></textarea></div>
           <button class="btn-submit" onclick="addProduct()">Add Product</button>
@@ -186,20 +187,18 @@
       </div>
       <div id="addCategory">
         <div class="form-box">
-          <h2>Add Product Category</h2>
+          <h2>Add Category</h2>
           <div class="form-row">
-            <div class="form-group"><label>Main Category</label><select id="mainCatSel"></select></div>
-            <div class="form-group"><label>Category Name</label><input id="catName"></div>
+            <div class="form-group"><label>Category Name <span style="color:#888;font-weight:400;font-size:.8rem">(e.g. Miniatures, Home Decor)</span></label><input id="catName" placeholder="Enter category name…"></div>
           </div>
           <div class="form-group"><label>Category Picture <span style="color:#888;font-weight:400;font-size:.8rem">(for customer reference)</span></label><input type="file" id="catImage" accept="image/*" style="padding:.5rem;border:1.5px dashed #e5e0d8;border-radius:4px;cursor:pointer"></div>
-          <div class="form-group" style="margin-top:.8rem"><label>Description</label><textarea id="catDesc"></textarea></div>
-          <button class="btn-submit" onclick="addCategory()">Add Category</button>
+          <button class="btn-submit" style="margin-top:1rem" onclick="addCategory()">Add Category</button>
         </div>
       </div>
       <div id="listCategories" style="display:none">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Main Category</th><th>Category Name</th><th>Image</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Category Name</th><th>Image</th><th>Actions</th></tr></thead>
             <tbody id="categoriesTable"></tbody>
           </table>
         </div>
@@ -246,9 +245,39 @@
     <div id="orders" class="page">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Order #</th><th>Customer</th><th>Phone</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+          <thead><tr><th>Order #</th><th>Customer</th><th>Phone</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Details</th></tr></thead>
           <tbody id="ordersTable"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- ── Settings ── -->
+    <div id="settings" class="page">
+      <div class="section-tabs">
+        <button class="stab active" onclick="switchStab(this,'settingsContact')">Contact Info</button>
+        <button class="stab" onclick="switchStab(this,'settingsPayment')">Payment QR Code</button>
+      </div>
+      <div id="settingsContact">
+        <div class="form-box">
+          <h2>Contact Information</h2>
+          <p style="color:#888;margin-bottom:1rem;font-size:.88rem">These details appear on the frontend Contact Us section.</p>
+          <div class="form-row">
+            <div class="form-group"><label>Email</label><input id="settEmail" type="email"></div>
+            <div class="form-group"><label>Phone</label><input id="settPhone" type="tel"></div>
+          </div>
+          <div class="form-group"><label>Address</label><textarea id="settAddress" style="min-height:60px"></textarea></div>
+          <div class="form-group"><label>Footer Text</label><input id="settFooter"></div>
+          <button class="btn-submit" onclick="saveSettings()">Save Contact Info</button>
+        </div>
+      </div>
+      <div id="settingsPayment" style="display:none">
+        <div class="form-box">
+          <h2>Payment QR Code</h2>
+          <p style="color:#888;margin-bottom:1rem;font-size:.88rem">Upload a UPI QR code image. Customers will see this at checkout.</p>
+          <div id="currentQrWrap" style="margin-bottom:1rem"></div>
+          <div class="form-group"><label>Upload New QR Code Image</label><input type="file" id="qrFile" accept="image/*" style="padding:.5rem;border:1.5px dashed #e5e0d8;border-radius:4px;cursor:pointer"></div>
+          <button class="btn-submit" style="margin-top:1rem" onclick="saveQrCode()">Upload QR Code</button>
+        </div>
       </div>
     </div>
 
@@ -258,6 +287,7 @@
         <h2>Export Data</h2>
         <p style="margin-bottom:1.2rem;color:var(--muted)">Download all product data as a CSV file for Excel / Google Sheets.</p>
         <button class="btn-submit" onclick="exportCSV()">⬇️ Export Products to CSV</button>
+        <button class="btn-submit" style="margin-left:1rem;background:#2a6abb" onclick="exportOrdersCSV()">⬇️ Export Orders to CSV</button>
       </div>
     </div>
   </main>
@@ -290,7 +320,7 @@ function toast(msg, type='success') {
 }
 
 // ── Navigation ───────────────────────────────────────────
-const titles = {dashboard:'Dashboard',products:'Products',categories:'Categories',discounts:'Discounts',orders:'Orders',export:'Export'};
+const titles = {dashboard:'Dashboard',products:'Products',categories:'Categories',discounts:'Discounts',orders:'Orders',settings:'Settings',export:'Export'};
 
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -303,7 +333,8 @@ function showPage(name) {
   if (name==='dashboard') loadDashboard();
   if (name==='orders')    loadOrders();
   if (name==='products') { loadProductCategories(); loadProductDiscounts(); }
-  if (name==='categories') loadMainCategories();
+  if (name==='categories') {}
+  if (name==='settings') loadSettings();
 }
 
 function switchStab(el, secId) {
@@ -398,13 +429,39 @@ async function addProduct() {
   const price    = document.getElementById('pPrice').value;
   const stock    = document.getElementById('pStock').value;
   if (!title||!category||!price) { toast('Fill in Title, Category and Price','error'); return; }
-  const body = { title, description:document.getElementById('pDesc').value, price:parseFloat(price), category:parseInt(category), stock:parseInt(stock)||0, image_url:document.getElementById('pImage').value, is_active:true };
-  const discId = document.getElementById('pDiscount').value;
-  if (discId) body.discount = parseInt(discId);
+
+  const imageFile = document.getElementById('pImage').files[0];
+  const token = localStorage.getItem('access_token');
+
   try {
-    await api.post(API_CONFIG.PRODUCTS.LIST, body);
+    let productData;
+    if (imageFile) {
+      const fd = new FormData();
+      fd.append('title', title);
+      fd.append('description', document.getElementById('pDesc').value);
+      fd.append('price', parseFloat(price));
+      fd.append('category', parseInt(category));
+      fd.append('stock', parseInt(stock)||0);
+      fd.append('is_active', true);
+      fd.append('image', imageFile);
+      const discId = document.getElementById('pDiscount').value;
+      if (discId) fd.append('discount', parseInt(discId));
+      const res = await fetch(API_CONFIG.BASE_URL + API_CONFIG.PRODUCTS.LIST, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      });
+      if (!res.ok) throw new Error(await res.text());
+      productData = await res.json();
+    } else {
+      const body = { title, description:document.getElementById('pDesc').value, price:parseFloat(price), category:parseInt(category), stock:parseInt(stock)||0, is_active:true };
+      const discId = document.getElementById('pDiscount').value;
+      if (discId) body.discount = parseInt(discId);
+      productData = await api.post(API_CONFIG.PRODUCTS.LIST, body);
+    }
     toast('✓ Product added successfully');
-    ['pTitle','pDesc','pPrice','pImage'].forEach(id => document.getElementById(id).value='');
+    ['pTitle','pDesc','pPrice'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('pImage').value = '';
     document.getElementById('pStock').value = '10';
   } catch(e) { toast(formatErrorMessage(e),'error'); }
 }
@@ -427,72 +484,66 @@ function editProductPrompt(id, title) {
 }
 
 // ── Categories ───────────────────────────────────────────
+async function loadCategories() {
+  try {
+    const data = await api.get(API_CONFIG.MAIN_CATEGORIES.LIST);
+    const list = data.results || data;
+    document.getElementById('categoriesTable').innerHTML = list.map(c =>
+      `<tr>
+        <td>${c.name}</td>
+        <td>${c.image ? `<img src="${c.image}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">` : '<span style="color:#bbb">No image</span>'}</td>
+        <td><button class="act-btn del" onclick="deleteMainCategory(${c.id})">Delete</button></td>
+      </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:#888">No categories yet</td></tr>';
+  } catch { toast('Error loading categories','error'); }
+}
+
 async function loadMainCategories() {
   try {
     const data = await api.get(API_CONFIG.MAIN_CATEGORIES.LIST);
     const list = data.results || data;
-    document.getElementById('mainCatSel').innerHTML = list.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    // Populate product form dropdown
+    const sel = document.getElementById('pCategory');
+    if (sel) {
+      // refresh product category dropdown using sub-categories
+      loadProductCategories();
+    }
+    loadCategories();
   } catch {}
 }
 
-async function loadCategories() {
-  try {
-    const data = await api.get(API_CONFIG.CATEGORIES.LIST);
-    const list = data.results || data;
-    document.getElementById('categoriesTable').innerHTML = list.map(c =>
-      `<tr>
-        <td>${c.main_category_name}</td>
-        <td>${c.name}</td>
-        <td>${c.image ? `<img src="${c.image}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">` : '<span style="color:#bbb">No image</span>'}</td>
-        <td><button class="act-btn del" onclick="deleteCategory(${c.id})">Delete</button></td>
-      </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:#888">No categories yet</td></tr>';
-  } catch { toast('Error loading categories','error'); }
-}
-
 async function addCategory() {
-  const main = document.getElementById('mainCatSel').value;
   const name = document.getElementById('catName').value.trim();
-  if (!main||!name) { toast('Select main category and enter a name','error'); return; }
+  if (!name) { toast('Enter a category name','error'); return; }
 
   const imageFile = document.getElementById('catImage').files[0];
-  let body;
-  if (imageFile) {
-    // Use FormData to send image file
-    body = new FormData();
-    body.append('main_category', parseInt(main));
-    body.append('name', name);
-    body.append('description', document.getElementById('catDesc').value);
-    body.append('is_active', true);
-    body.append('image', imageFile);
-  } else {
-    body = { main_category:parseInt(main), name, description:document.getElementById('catDesc').value, is_active:true };
-  }
+  const token = localStorage.getItem('access_token');
 
   try {
-    if (body instanceof FormData) {
-      // Post with FormData (multipart) - use fetch directly
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(API_CONFIG.CATEGORIES.LIST, {
+    if (imageFile) {
+      const fd = new FormData();
+      fd.append('name', name);
+      fd.append('is_active', true);
+      fd.append('image', imageFile);
+      const res = await fetch(API_CONFIG.BASE_URL + API_CONFIG.MAIN_CATEGORIES.LIST, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
-        body
+        body: fd
       });
       if (!res.ok) throw new Error(await res.text());
     } else {
-      await api.post(API_CONFIG.CATEGORIES.LIST, body);
+      await api.post(API_CONFIG.MAIN_CATEGORIES.LIST, { name, is_active:true });
     }
     toast('✓ Category added');
     document.getElementById('catName').value='';
-    document.getElementById('catDesc').value='';
     document.getElementById('catImage').value='';
-    loadProductCategories();
+    loadCategories();
   } catch(e) { toast(formatErrorMessage(e),'error'); }
 }
 
-async function deleteCategory(id) {
+async function deleteMainCategory(id) {
   if (!confirm('Delete this category?')) return;
   try {
-    await api.delete(API_CONFIG.CATEGORIES.DELETE(id));
+    await api.delete(API_CONFIG.MAIN_CATEGORIES.LIST + id + '/');
     toast('✓ Category deleted');
     loadCategories();
   } catch { toast('Error','error'); }
@@ -561,8 +612,31 @@ async function loadOrders() {
           </select>
         </td>
         <td>${new Date(o.created_at).toLocaleDateString('en-IN')}</td>
-      </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:#888">No orders yet</td></tr>';
+        <td><button class="act-btn" onclick="viewOrderDetails(${o.id})">📋 View</button></td>
+      </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:#888">No orders yet</td></tr>';
   } catch(e) { console.error(e); toast('Error loading orders','error'); }
+}
+
+async function viewOrderDetails(id) {
+  try {
+    const o = await api.get(API_CONFIG.ORDERS.DETAIL(id));
+    const items = (o.items || []).map(i =>
+      `• ${i.product_title || i.product} × ${i.quantity} @ ${fmt(i.price)}`
+    ).join('\n');
+    const details = [
+      `Order #${o.id} — ${new Date(o.created_at).toLocaleString('en-IN')}`,
+      `Customer: ${o.guest_name}`,
+      `Email: ${o.guest_email}`,
+      `Phone: ${o.guest_phone}`,
+      `Address: ${o.guest_address || '—'}`,
+      `Payment: ${o.payment_method}  |  Status: ${o.status}`,
+      `Total: ${fmt(o.total)}`,
+      ``,
+      `Items:`,
+      items || '(no items)'
+    ].join('\n');
+    alert(details);
+  } catch { toast('Error loading order details','error'); }
 }
 
 async function updateStatus(id, status) {
@@ -574,9 +648,112 @@ async function updateStatus(id, status) {
 
 // ── Export ───────────────────────────────────────────────
 function exportCSV() {
+  const token = localStorage.getItem('access_token');
   const baseUrl = API_CONFIG.BASE_URL;
-  window.open(baseUrl + '/products/products/export_csv/', '_blank');
-  toast('✓ CSV download started');
+  // Use fetch to download with auth header
+  fetch(baseUrl + '/products/products/export_csv/', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }).then(res => {
+    if (!res.ok) throw new Error('Export failed: ' + res.status);
+    return res.blob();
+  }).then(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'products_export.csv';
+    a.click();
+    toast('✓ CSV downloaded');
+  }).catch(e => toast('Export error: ' + e.message, 'error'));
+}
+
+function exportOrdersCSV() {
+  const token = localStorage.getItem('access_token');
+  const baseUrl = API_CONFIG.BASE_URL;
+  fetch(baseUrl + '/orders/export_csv/', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }).then(res => {
+    if (!res.ok) throw new Error('Export failed: ' + res.status);
+    return res.blob();
+  }).then(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'orders_export.csv';
+    a.click();
+    toast('✓ Orders CSV downloaded');
+  }).catch(e => toast('Export error: ' + e.message, 'error'));
+}
+
+// ── Settings ─────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const data = await api.get('/products/settings/');
+    const s = Array.isArray(data) ? data[0] : (data.results ? data.results[0] : data);
+    if (!s) return;
+    document.getElementById('settEmail').value   = s.contact_email || '';
+    document.getElementById('settPhone').value   = s.contact_phone || '';
+    document.getElementById('settAddress').value = s.contact_address || '';
+    document.getElementById('settFooter').value  = s.footer_copy || '';
+    window._settingsId = s.id;
+  } catch(e) { toast('Error loading settings','error'); }
+
+  // Load QR code from payment methods
+  try {
+    const pmData = await api.get('/products/payment-methods/');
+    const pms = Array.isArray(pmData) ? pmData : (pmData.results || []);
+    const upi = pms.find(p => p.method_type === 'upi' && p.qr_code);
+    const wrap = document.getElementById('currentQrWrap');
+    if (upi && upi.qr_code) {
+      wrap.innerHTML = `<p style="font-size:.85rem;color:#888;margin-bottom:.5rem">Current QR Code:</p><img src="${upi.qr_code}" style="max-width:200px;border-radius:8px;border:1px solid #e5e0d8">`;
+      window._qrPaymentId = upi.id;
+    } else {
+      wrap.innerHTML = '<p style="color:#bbb;font-size:.88rem">No QR code uploaded yet.</p>';
+    }
+  } catch {}
+}
+
+async function saveSettings() {
+  const body = {
+    contact_email:   document.getElementById('settEmail').value,
+    contact_phone:   document.getElementById('settPhone').value,
+    contact_address: document.getElementById('settAddress').value,
+    footer_copy:     document.getElementById('settFooter').value
+  };
+  try {
+    const id = window._settingsId;
+    if (id) {
+      await api.patch(`/products/settings/${id}/`, body);
+    } else {
+      await api.post('/products/settings/', body);
+    }
+    toast('✓ Contact info saved');
+  } catch(e) { toast(formatErrorMessage(e),'error'); }
+}
+
+async function saveQrCode() {
+  const file = document.getElementById('qrFile').files[0];
+  if (!file) { toast('Please choose a QR code image first','error'); return; }
+  const token = localStorage.getItem('access_token');
+  const fd = new FormData();
+  fd.append('qr_code', file);
+  const id = window._qrPaymentId;
+  const url = id
+    ? API_CONFIG.BASE_URL + `/products/payment-methods/${id}/`
+    : API_CONFIG.BASE_URL + '/products/payment-methods/';
+  if (!id) {
+    fd.append('name', 'UPI Payment');
+    fd.append('method_type', 'upi');
+    fd.append('is_active', true);
+  }
+  try {
+    const res = await fetch(url, {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: fd
+    });
+    if (!res.ok) throw new Error(await res.text());
+    toast('✓ QR Code uploaded!');
+    document.getElementById('qrFile').value = '';
+    loadSettings();
+  } catch(e) { toast('QR upload error: ' + e.message, 'error'); }
 }
 
 // Init ─────────────────────────────────────────────────
