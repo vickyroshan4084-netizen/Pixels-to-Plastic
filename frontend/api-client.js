@@ -5,7 +5,7 @@
  */
 
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:8000/api',
+  BASE_URL: 'https://p2p-qm1i.onrender.com/api',
   TIMEOUT: 10000, // 10 seconds
   
   // Endpoints

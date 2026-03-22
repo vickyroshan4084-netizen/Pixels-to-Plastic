@@ -9,7 +9,7 @@
  */
 
 // ── UPDATE THIS after Render deploy ──────────────────────────────────────────
-const RENDER_BACKEND_URL = 'https://p2p-backend.onrender.com';
+const RENDER_BACKEND_URL = 'https://p2p-qm1i.onrender.com';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const API_BASE = (() => {
