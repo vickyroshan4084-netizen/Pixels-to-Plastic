@@ -390,7 +390,7 @@ async function loadProductCategories() {
     const list = data.results || data;
     document.getElementById('pCategory').innerHTML =
       '<option value="">Select category…</option>' +
-      list.map(c => `<option value="${c.id}">${c.main_category_name} › ${c.name}</option>`).join('');
+      list.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   } catch {}
 }
 
@@ -519,6 +519,7 @@ async function addCategory() {
   const token = localStorage.getItem('access_token');
 
   try {
+    let mainCat;
     if (imageFile) {
       const fd = new FormData();
       fd.append('name', name);
@@ -530,13 +531,23 @@ async function addCategory() {
         body: fd
       });
       if (!res.ok) throw new Error(await res.text());
+      mainCat = await res.json();
     } else {
-      await api.post(API_CONFIG.MAIN_CATEGORIES.LIST, { name, is_active:true });
+      mainCat = await api.post(API_CONFIG.MAIN_CATEGORIES.LIST, { name, is_active:true });
     }
+
+    // Single-level logic: Automatically create a mirror sub-category so products can link to it
+    await api.post(API_CONFIG.CATEGORIES.LIST, { 
+      main_category: mainCat.id,
+      name: name,
+      is_active: true
+    });
+
     toast('✓ Category added');
     document.getElementById('catName').value='';
     document.getElementById('catImage').value='';
     loadCategories();
+    loadProductCategories(); // Refresh product form dropdown
   } catch(e) { toast(formatErrorMessage(e),'error'); }
 }
 
