@@ -1,294 +1,79 @@
 /**
- * API Configuration & Constants
- * Centralized API endpoint configuration for frontend
- * This file is imported by all frontend pages
+ * api-client.js — Pixels to Plastic
+ * ─────────────────────────────────────────────────────────────────────────────
+ * REPLACE your existing api-client.js with this.
+ *
+ * After deploying to Render, update RENDER_BACKEND_URL below with your
+ * actual URL from: Render Dashboard → p2p-backend → Settings → URL
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
+// ── UPDATE THIS after Render deploy ──────────────────────────────────────────
+const RENDER_BACKEND_URL = 'https://p2p-backend.onrender.com';
+// ─────────────────────────────────────────────────────────────────────────────
+
+const API_BASE = (() => {
+  const h = window.location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1') return 'http://127.0.0.1:8000/api';
+  return RENDER_BACKEND_URL + '/api';
+})();
+
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:8000/api',
-  TIMEOUT: 10000, // 10 seconds
-  
-  // Endpoints
+  BASE_URL: API_BASE,
   AUTH: {
-    LOGIN: '/auth/login/',
-    REGISTER: '/auth/register/',
-    ADMIN_REGISTER: '/auth/admin-register/',
-    PROFILE: '/auth/profile/',
-    REFRESH: '/auth/refresh/',
-    VERIFY: '/auth/verify/',
+    LOGIN:           `${API_BASE}/auth/login/`,
+    REGISTER:        `${API_BASE}/auth/register/`,
+    ADMIN_REGISTER:  `${API_BASE}/auth/admin-register/`,
+    PROFILE:         `${API_BASE}/auth/profile/`,
+    REFRESH:         `${API_BASE}/auth/refresh/`,
+    USERS:           `${API_BASE}/auth/users/`,
   },
-  
   PRODUCTS: {
-    LIST: '/products/products/',
-    DETAIL: (id) => `/products/products/${id}/`,
-    CREATE: '/products/products/',
-    UPDATE: (id) => `/products/products/${id}/`,
-    DELETE: (id) => `/products/products/${id}/`,
+    LIST:             `${API_BASE}/products/products/`,
+    DETAIL:   (id) => `${API_BASE}/products/products/${id}/`,
+    DELETE:   (id) => `${API_BASE}/products/products/${id}/`,
   },
-  
-  CATEGORIES: {
-    LIST: '/products/categories/',
-    DETAIL: (id) => `/products/categories/${id}/`,
-    CREATE: '/products/categories/',
-    UPDATE: (id) => `/products/categories/${id}/`,
-    DELETE: (id) => `/products/categories/${id}/`,
-  },
-  
   MAIN_CATEGORIES: {
-    LIST: '/products/main-categories/',
-    DETAIL: (id) => `/products/main-categories/${id}/`,
+    LIST:             `${API_BASE}/products/main-categories/`,
+    DETAIL:   (id) => `${API_BASE}/products/main-categories/${id}/`,
+    DELETE:   (id) => `${API_BASE}/products/main-categories/${id}/`,
   },
-  
+  CATEGORIES: {
+    LIST:             `${API_BASE}/products/categories/`,
+    DETAIL:   (id) => `${API_BASE}/products/categories/${id}/`,
+    DELETE:   (id) => `${API_BASE}/products/categories/${id}/`,
+  },
   DISCOUNTS: {
-    LIST: '/products/discounts/',
-    DETAIL: (id) => `/products/discounts/${id}/`,
-    CREATE: '/products/discounts/',
-    UPDATE: (id) => `/products/discounts/${id}/`,
-    DELETE: (id) => `/products/discounts/${id}/`,
+    LIST:             `${API_BASE}/products/discounts/`,
+    DETAIL:   (id) => `${API_BASE}/products/discounts/${id}/`,
+    DELETE:   (id) => `${API_BASE}/products/discounts/${id}/`,
   },
-  
   CART: {
-    LIST: '/cart/',
-    ADD_ITEM: '/cart/items/',
-    UPDATE_ITEM: (id) => `/cart/items/${id}/`,
-    REMOVE_ITEM: (id) => `/cart/items/${id}/`,
+    LIST:              `${API_BASE}/cart/`,
+    ADD_ITEM:          `${API_BASE}/cart/items/`,
+    UPDATE_ITEM: (id) =>`${API_BASE}/cart/items/${id}/`,
+    REMOVE_ITEM: (id) =>`${API_BASE}/cart/items/${id}/`,
   },
-  
   ORDERS: {
-    LIST: '/orders/',
-    CREATE: '/orders/checkout/',
-    DETAIL: (id) => `/orders/${id}/`,
-    VERIFY_PAYMENT: '/orders/payment/verify/',
+    LIST:              `${API_BASE}/orders/`,
+    CREATE:            `${API_BASE}/orders/checkout/`,
+    DETAIL:    (id) => `${API_BASE}/orders/${id}/`,
+    STATUS:    (id) => `${API_BASE}/orders/${id}/status/`,
+    VERIFY:            `${API_BASE}/orders/payment/verify/`,
+    EXPORT_EXCEL:      `${API_BASE}/orders/export/excel/`,
+  },
+  DASHBOARD: {
+    STATS: `${API_BASE}/orders/dashboard/stats/`,
   },
 };
 
-/**
- * Enhanced API Client
- * Handles authentication, error handling, and request formatting
- */
-class APIClient {
-  constructor(config = {}) {
-    this.baseURL = config.baseURL || API_CONFIG.BASE_URL;
-    this.timeout = config.timeout || API_CONFIG.TIMEOUT;
-    this.listeners = {
-      request: [],
-      response: [],
-      error: [],
-      unauthorized: []
-    };
-  }
-  
-  /**
-   * Get authorization header with access token
-   */
-  getAuthHeaders() {
-    const token = localStorage.getItem('access_token');
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    };
-  }
-  
-  /**
-   * Make API request with built-in error handling
-   */
-  async request(endpoint, options = {}) {
-    const url = this.baseURL + endpoint;
-    const timeoutId = setTimeout(() => {
-      throw new Error(`Request timeout after ${this.timeout}ms`);
-    }, this.timeout);
-    
-    try {
-      // Notify listeners of request
-      this.emit('request', { url, options });
-      
-      const response = await fetch(url, {
-        headers: this.getAuthHeaders(),
-        ...options
-      });
-      
-      clearTimeout(timeoutId);
-      
-      // Handle 401 Unauthorized - token expired
-      if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
-        this.emit('unauthorized', { url, status: response.status });
-        
-        // Redirect to login
-        if (typeof window !== 'undefined') {
-          window.location.href = 'admin-login.html';
-        }
-        throw new Error('Unauthorized. Please login again.');
-      }
-      
-      // Parse response
-      let data;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        data = await response.text();
-      }
-      
-      // Notify listeners of response
-      this.emit('response', { url, status: response.status, data });
-      
-      if (!response.ok) {
-        const error = new APIError(
-          data.detail || data.message || 'API Error',
-          response.status,
-          data,
-          url
-        );
-        this.emit('error', error);
-        throw error;
-      }
-      
-      return data;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      
-      if (error instanceof APIError) {
-        throw error;
-      }
-      
-      const apiError = new APIError(
-        error.message || 'Network error',
-        0,
-        { original_error: error },
-        url
-      );
-      this.emit('error', apiError);
-      throw apiError;
-    }
-  }
-  
-  /**
-   * GET request
-   */
-  get(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'GET' });
-  }
-  
-  /**
-   * POST request
-   */
-  post(endpoint, data, options = {}) {
-    return this.request(endpoint, {
-      ...options,
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  }
-  
-  /**
-   * PATCH request
-   */
-  patch(endpoint, data, options = {}) {
-    return this.request(endpoint, {
-      ...options,
-      method: 'PATCH',
-      body: JSON.stringify(data)
-    });
-  }
-  
-  /**
-   * PUT request
-   */
-  put(endpoint, data, options = {}) {
-    return this.request(endpoint, {
-      ...options,
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
-  }
-  
-  /**
-   * DELETE request
-   */
-  delete(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'DELETE' });
-  }
-  
-  /**
-   * Listen to API events
-   */
-  on(event, callback) {
-    if (this.listeners[event]) {
-      this.listeners[event].push(callback);
-    }
-  }
-  
-  /**
-   * Stop listening to events
-   */
-  off(event, callback) {
-    if (this.listeners[event]) {
-      this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
-    }
-  }
-  
-  /**
-   * Emit event to listeners
-   */
-  emit(event, data) {
-    if (this.listeners[event]) {
-      this.listeners[event].forEach(callback => {
-        try {
-          callback(data);
-        } catch (e) {
-          console.error(`Error in ${event} listener:`, e);
-        }
-      });
-    }
-  }
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+function getToken()        { return localStorage.getItem('access_token') || ''; }
+function getCurrentUser()  {
+  try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
 }
-
-/**
- * Custom API Error class
- */
-class APIError extends Error {
-  constructor(message, status, data = {}, url = '') {
-    super(message);
-    this.name = 'APIError';
-    this.status = status;
-    this.data = data;
-    this.url = url;
-  }
-}
-
-/**
- * Global API client instance
- */
-const api = new APIClient();
-
-/**
- * Helper: Check if user is authenticated
- */
-function isAuthenticated() {
-  return !!localStorage.getItem('access_token');
-}
-
-/**
- * Helper: Get current user info
- */
-function getCurrentUser() {
-  const userJson = localStorage.getItem('user');
-  return userJson ? JSON.parse(userJson) : null;
-}
-
-/**
- * Helper: Check if user is admin
- */
-function isAdmin() {
-  const user = getCurrentUser();
-  return user && user.is_staff === true;
-}
-
-/**
- * Helper: Logout
- */
+function isAuthenticated() { return !!getToken() && !!getCurrentUser(); }
+function isAdmin()         { const u = getCurrentUser(); return !!u && u.is_staff === true; }
 function logout() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
@@ -296,45 +81,88 @@ function logout() {
   window.location.href = 'admin-login.html';
 }
 
-/**
- * Helper: Format error message for display
- */
-function formatErrorMessage(error) {
-  if (error instanceof APIError) {
-    // Handle different error types
-    if (error.data && typeof error.data === 'object') {
-      // Extract field errors from Django REST Framework
-      const errors = [];
-      Object.entries(error.data).forEach(([field, messages]) => {
-        if (Array.isArray(messages)) {
-          errors.push(...messages);
-        } else {
-          errors.push(`${field}: ${messages}`);
-        }
-      });
-      if (errors.length > 0) return errors[0];
-    }
-    
-    // Check for HTML response (can happen on 404/500 if server misconfigured)
-    if (typeof error.data === 'string' && error.data.includes('<!DOCTYPE html>')) {
-      return `Server Error (${error.status}): The URL ${error.url} could not be reached.`;
-    }
-    
-    return error.message;
+// ── Error class ───────────────────────────────────────────────────────────────
+class APIError extends Error {
+  constructor(message, status, data) {
+    super(message); this.name = 'APIError'; this.status = status; this.data = data;
   }
-  return error.message || 'An unknown error occurred';
 }
 
-/**
- * Export for use in other files
- */
-// Make globally available
-window.API_CONFIG = API_CONFIG;
-window.APIClient = APIClient;
-window.APIError = APIError;
-window.api = api;
-window.isAuthenticated = isAuthenticated;
-window.getCurrentUser = getCurrentUser;
-window.isAdmin = isAdmin;
-window.logout = logout;
-window.formatErrorMessage = formatErrorMessage;
+// ── Core fetch ────────────────────────────────────────────────────────────────
+async function _request(method, url, data = null, options = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  const token   = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const config = { method, headers, signal: AbortSignal.timeout(35000), ...options };
+  if (data && method !== 'GET') config.body = JSON.stringify(data);
+
+  let response;
+  try {
+    response = await fetch(url, config);
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      throw new APIError('⏳ Server is waking up (free hosting takes ~30 sec). Please try again.', 0, null);
+    }
+    throw new APIError('🔌 Cannot connect to server. Check your internet connection.', 0, null);
+  }
+
+  if (response.status === 401) {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    window.location.href = 'admin-login.html';
+    return;
+  }
+
+  let responseData;
+  try {
+    const ct = response.headers.get('content-type') || '';
+    responseData = ct.includes('application/json') ? await response.json() : await response.text();
+  } catch { responseData = null; }
+
+  if (!response.ok) {
+    let msg = `Error ${response.status}`;
+    if (responseData && typeof responseData === 'object') {
+      msg = responseData.detail || responseData.non_field_errors?.[0]
+            || Object.values(responseData).flat()[0] || msg;
+    }
+    throw new APIError(String(msg), response.status, responseData);
+  }
+  return responseData;
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+const api = {
+  get:    (url, opts)       => _request('GET',    url, null, opts),
+  post:   (url, data, opts) => _request('POST',   url, data, opts),
+  put:    (url, data, opts) => _request('PUT',    url, data, opts),
+  patch:  (url, data, opts) => _request('PATCH',  url, data, opts),
+  delete: (url, opts)       => _request('DELETE', url, null, opts),
+  upload: async (url, formData) => {
+    const headers = {};
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const r = await fetch(url, { method: 'POST', headers, body: formData });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new APIError(d.detail || 'Upload failed', r.status, d);
+    return d;
+  },
+};
+
+function formatErrorMessage(error) {
+  if (!error) return 'An unknown error occurred.';
+  if (typeof error === 'string') return error;
+  if (error.status === 0) return error.message;
+  if (error.data && typeof error.data === 'object') {
+    const first = Object.values(error.data).flat()[0];
+    if (first) return String(first);
+  }
+  return error.message || 'Something went wrong.';
+}
+
+// ── Wake-up ping on page load (keeps Render free tier alive) ─────────────────
+(async () => {
+  try {
+    await fetch(`${API_BASE}/products/products/?page_size=1`, { signal: AbortSignal.timeout(35000) });
+  } catch { /* silent */ }
+})();

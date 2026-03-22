@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — Pixels to Plastic (P2P)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--coral:#e8533c;--dark:#0d0d0d;--mid:#2a2a2c;--border:#e5e0d8;--fd:'Playfair Display',serif;--fb:'DM Sans',sans-serif}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--fb);background:linear-gradient(135deg,var(--dark) 0%,#2a2a2c 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--dark)}
+    .card{background:#fff;padding:2.5rem;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:420px;width:90%}
+    .back{margin-bottom:1.5rem}
+    .back a{color:var(--coral);text-decoration:none;font-weight:600;font-size:.9rem}
+    .back a:hover{text-decoration:underline}
+    .logo{text-align:center;margin-bottom:2rem}
+    .logo h1{font-family:var(--fd);font-size:1.8rem;margin-bottom:.3rem}
+    .logo h1 span{color:var(--coral)}
+    .logo p{color:#888;font-size:.9rem}
+    .tabs{display:flex;gap:.5rem;margin-bottom:2rem;border-bottom:2px solid var(--border)}
+    .tab-btn{flex:1;background:none;border:none;border-bottom:3px solid transparent;padding:1rem;cursor:pointer;font-family:var(--fb);font-weight:600;color:#888;transition:all .2s}
+    .tab-btn.active{color:var(--coral);border-bottom-color:var(--coral)}
+    .tab-btn:hover{color:var(--dark)}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .form-group{margin-bottom:1.2rem}
+    label{display:block;font-weight:600;margin-bottom:.4rem;font-size:.9rem}
+    input{width:100%;padding:.8rem;border:1.5px solid var(--border);border-radius:6px;font-family:var(--fb);font-size:.95rem;transition:border-color .2s}
+    input:focus{outline:none;border-color:var(--coral)}
+    .btn{width:100%;background:var(--coral);color:#fff;border:none;padding:.9rem;border-radius:6px;font-family:var(--fb);font-weight:600;font-size:1rem;cursor:pointer;transition:background .2s}
+    .btn:hover{background:#c93d28}
+    .btn:disabled{background:#ccc;cursor:not-allowed}
+    .alert{padding:.8rem;border-radius:6px;margin-bottom:1.5rem;font-size:.9rem;display:none}
+    .alert.error{background:#ffe6e6;color:#e74c3c;display:block}
+    .alert.success{background:#e6ffe6;color:#27ae60;display:block}
+    .help{font-size:.82rem;color:#888;margin-top:.4rem}
+    .hint-box{background:#fff8f7;border:1px solid #ffd6d0;border-radius:6px;padding:1rem;margin-top:1.5rem;font-size:.85rem}
+    .hint-box strong{color:var(--coral)}
+    .center-link{text-align:center;margin-top:1.2rem;font-size:.88rem}
+    .center-link a{color:var(--coral);font-weight:600;text-decoration:none}
+  </style>
+
+  <!-- Firebase Configuration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvtXnRyLVdG98uXUVsuYmWBpeFUfGEzJ0",
+      authDomain: "pixal-to-plastic.firebaseapp.com",
+      projectId: "pixal-to-plastic",
+      storageBucket: "pixal-to-plastic.firebasestorage.app",
+      messagingSenderId: "269644781419",
+      appId: "1:269644781419:web:7409155bd0ac5009d0de2e"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+  </script>
+</head>
+<body>
+<div class="card">
+  <div class="back"><a href="index.html">← Back to Shop</a></div>
+  <div class="logo">
+    <h1>Pixels to <span>Plastic</span></h1>
+    <p>Staff Portal</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('customerLogin',this)">Customer Login</button>
+    <button class="tab-btn"        onclick="switchTab('adminLogin',this)">Admin Login</button>
+  </div>
+
+  <div id="alert" class="alert"></div>
+
+  <!-- Customer Login -->
+  <div id="customerLogin" class="tab-content active">
+    <div class="form-group"><label>Username</label><input type="text" id="cUsername"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="cPassword"></div>
+    <button class="btn" onclick="doCustomerLogin()">Login as Customer</button>
+    <div class="center-link">New here? <a href="index.html">Register on the shop page</a></div>
+  </div>
+
+  <!-- Admin Login / Register -->
+  <div id="adminLogin" class="tab-content">
+    <div class="form-group"><label>Username</label><input type="text" id="aUsername"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="aPassword"></div>
+    <div class="form-group">
+      <label>Admin Key <span style="color:#888;font-weight:400">(for first-time registration only)</span></label>
+      <input type="password" id="aKey" placeholder="Enter the admin registration key">
+      <p class="help">Existing admins: leave this blank — just enter username and password.</p>
+    </div>
+    <button class="btn" id="adminBtn" onclick="doAdminLogin()">Login / Register as Admin</button>
+
+    <div class="hint-box">
+      <strong>🔑 Default admin key:</strong> <code>p2p_admin_2024</code><br>
+      Change it in <code>backend/accounts/serializers.py → ADMIN_KEY</code>
+    </div>
+</div>
+
+<!-- API Client Library -->
+<script src="api-client.js"></script>
+
+<script>
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  el.classList.add('active');
+  clearAlert();
+}
+
+function showAlert(msg, type='error') {
+  const a = document.getElementById('alert');
+  a.textContent = msg;
+  a.className = 'alert ' + type;
+}
+function clearAlert() {
+  document.getElementById('alert').className = 'alert';
+}
+
+async function doCustomerLogin() {
+  const username = document.getElementById('cUsername').value.trim();
+  const password = document.getElementById('cPassword').value;
+  if (!username || !password) { showAlert('Enter username and password'); return; }
+  try {
+    const data = await api.post(API_CONFIG.AUTH.LOGIN, {username, password});
+    localStorage.setItem('access_token', data.access);
+    localStorage.setItem('user', JSON.stringify(data.user || {username}));
+    if (data.user?.is_staff) {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'index.html';
+    }
+  } catch (error) { 
+    showAlert(formatErrorMessage(error)); 
+  }
+}
+
+async function doAdminLogin() {
+  const username = document.getElementById('aUsername').value.trim();
+  const password = document.getElementById('aPassword').value;
+  const adminKey = document.getElementById('aKey').value.trim();
+  if (!username || !password) { showAlert('Enter username and password'); return; }
+
+  const btn = document.getElementById('adminBtn');
+  btn.disabled = true; btn.textContent = 'Logging in…';
+
+  try {
+    // Try login first
+    const loginData = await api.post(API_CONFIG.AUTH.LOGIN, {username, password})
+      .catch(() => null);
+
+    if (loginData && loginData.user?.is_staff) {
+      localStorage.setItem('access_token', loginData.access);
+      localStorage.setItem('user', JSON.stringify(loginData.user));
+      window.location.href = 'admin.html';
+      return;
+    }
+
+    // Not an admin yet — try registering with admin key
+    if (!adminKey) {
+      showAlert('Account exists but is not an admin. Provide the admin key to register as admin.');
+      return;
+    }
+
+    const regData = await api.post(API_CONFIG.AUTH.ADMIN_REGISTER, {
+      username, password, password2: password, admin_key: adminKey
+    });
+
+    localStorage.setItem('access_token', regData.access);
+    localStorage.setItem('user', JSON.stringify(regData.user));
+    showAlert('✓ Admin account created! Redirecting…', 'success');
+    setTimeout(() => window.location.href = 'admin.html', 1500);
+
+  } catch (error) {
+    showAlert(formatErrorMessage(error));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Login / Register as Admin';
+  }
+}
+
+// Auto-redirect if already logged in
+const token = localStorage.getItem('access_token');
+const user  = JSON.parse(localStorage.getItem('user') || 'null');
+if (token && user) {
+  window.location.href = user.is_staff ? 'admin.html' : 'index.html';
+}
+</script>
+</body>
+</html>

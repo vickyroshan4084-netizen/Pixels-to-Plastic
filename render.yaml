@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: p2p-backend
+    runtime: python
+    pythonVersion: 3.11
+    rootDir: backend
+    buildCommand: bash build.sh
+    startCommand: gunicorn vignesh3d.wsgi --bind 0.0.0.0:$PORT --workers 2
+    envVars:
+      - key: DEBUG
+        value: false
+      - key: PYTHON_VERSION
+        value: 3.11.10
+      - key: PIP_INSTALL_TIMEOUT
+        value: 600
+
+databases:
+  - name: p2p_db
+    databaseName: p2p_db
+    user: p2p_user
+    region: singapore
