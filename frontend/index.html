@@ -890,6 +890,9 @@
     }
   </style>
 
+  <!-- Premium Dark Theme Extender -->
+  <link rel="stylesheet" href="premium-theme.css">
+
   <!-- Firebase Configuration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
@@ -1553,7 +1556,21 @@
       loadSettings();
       loadPaymentMethods();
       const user = getCurrentUser();
-      if (user) document.getElementById('authBtn').textContent = user.username;
+      
+      if (user) {
+        document.getElementById('authBtn').textContent = user.username;
+        
+        // Super User Integration
+        if (user.is_superuser || user.is_staff || user.is_admin) {
+          const navMenu = document.querySelector('nav ul');
+          if (navMenu && !document.getElementById('adminPanelLink')) {
+            const li = document.createElement('li');
+            li.id = 'adminPanelLink';
+            li.innerHTML = '<a href="admin.html" class="admin-link">⚙️ Admin</a>';
+            navMenu.appendChild(li);
+          }
+        }
+      }
     });
   </script>
   <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
