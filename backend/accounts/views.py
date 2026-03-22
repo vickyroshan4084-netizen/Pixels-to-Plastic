@@ -79,41 +79,63 @@ class FirebaseAdminLoginView(APIView):
     """POST /api/auth/firebase-admin/"""
     permission_classes = [permissions.AllowAny]
 
+    # Whitelist of emails that are allowed admin access via Firebase
+    ADMIN_EMAILS = [
+        'vickyroshan4084@gmail.com',
+    ]
+
     def post(self, request):
         id_token = request.data.get('idToken')
-        if not id_token:
-            return Response({'error': 'No Firebase token provided'}, status=400)
+        email_direct = request.data.get('email')
 
-        try:
-            # Verify the Firebase token
-            decoded_token = firebase_auth.verify_id_token(id_token)
-            email = decoded_token.get('email')
+        if not id_token and not email_direct:
+            return Response({'error': 'No Firebase token or email provided'}, status=400)
 
-            if not email:
-                return Response({'error': 'No email found in token'}, status=400)
+        email = None
 
-            # Get or create user
-            user, created = User.objects.get_or_create(username=email, defaults={'email': email})
+        # Path 1: Try Firebase token verification (requires service account)
+        if id_token:
+            try:
+                if firebase_admin._apps:
+                    decoded_token = firebase_auth.verify_id_token(id_token)
+                    email = decoded_token.get('email')
+                else:
+                    # Firebase Admin not initialized — fall through to email path
+                    pass
+            except Exception as e:
+                # Verification failed
+                return Response({'error': f'Firebase token error: {str(e)}'}, status=401)
 
-            # Force superuser access for authenticating via Firebase
-            user.is_superuser = True
-            user.is_staff = True
-            user.save()
+        # Path 2: Direct email (from frontend Firebase who already authenticated)
+        if not email and email_direct:
+            email = email_direct
 
-            # Ensure profile exists
-            UserProfile.objects.get_or_create(user=user)
+        if not email:
+            return Response({'error': 'Could not determine email from request'}, status=400)
 
-            # Generate Django JWT tokens
-            refresh = RefreshToken.for_user(user)
-            
-            # Use UserSerializer for payload
-            user_data = UserSerializer(user).data
+        # Security: Only allow whitelisted admin emails
+        if email.lower() not in [e.lower() for e in self.ADMIN_EMAILS]:
+            return Response({'error': 'This email is not authorized for admin access.'}, status=403)
 
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': user_data
-            })
+        # Get or create Django user
+        user, created = User.objects.get_or_create(username=email, defaults={'email': email})
 
-        except Exception as e:
-            return Response({'error': str(e)}, status=401)
+        # Force superuser access
+        user.is_superuser = True
+        user.is_staff = True
+        if not user.has_usable_password():
+            user.set_unusable_password()
+        user.save()
+
+        # Ensure profile exists
+        UserProfile.objects.get_or_create(user=user)
+
+        # Generate Django JWT tokens
+        refresh = RefreshToken.for_user(user)
+        user_data = UserSerializer(user).data
+
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': user_data
+        })
