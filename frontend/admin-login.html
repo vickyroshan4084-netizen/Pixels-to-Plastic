@@ -43,6 +43,7 @@
   <!-- Firebase Configuration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
     
     const firebaseConfig = {
       apiKey: "AIzaSyBimWAh2AwDdTjGyCPoYekVvzohbM1V77c",
@@ -56,6 +57,8 @@
 
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
+    window.fbAuth = getAuth(app);
+    window.fbSignIn = signInWithEmailAndPassword;
   </script>
 </head>
 <body>
@@ -67,35 +70,19 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('customerLogin',this)">Customer Login</button>
-    <button class="tab-btn"        onclick="switchTab('adminLogin',this)">Admin Login</button>
+    <button class="tab-btn active">Admin Secure Firebase Login</button>
   </div>
 
   <div id="alert" class="alert"></div>
 
-  <!-- Customer Login -->
-  <div id="customerLogin" class="tab-content active">
-    <div class="form-group"><label>Username</label><input type="text" id="cUsername"></div>
-    <div class="form-group"><label>Password</label><input type="password" id="cPassword"></div>
-    <button class="btn" onclick="doCustomerLogin()">Login as Customer</button>
-    <div class="center-link">New here? <a href="index.html">Register on the shop page</a></div>
+  <!-- Admin Login -->
+  <div id="adminLogin" class="tab-content active">
+    <!-- Notice we removed the "Admin Key" and "Customer Login" blocks to strictly enforce Firebase -->
+    <div class="form-group"><label>Admin Email</label><input type="email" id="aUsername" placeholder="vickyroshan4084@gmail.com"></div>
+    <div class="form-group"><label>Firebase Password</label><input type="password" id="aPassword"></div>
+    <button class="btn" id="adminBtn" onclick="doAdminLogin()">Connect to Backend server</button>
   </div>
 
-  <!-- Admin Login / Register -->
-  <div id="adminLogin" class="tab-content">
-    <div class="form-group"><label>Username</label><input type="text" id="aUsername"></div>
-    <div class="form-group"><label>Password</label><input type="password" id="aPassword"></div>
-    <div class="form-group">
-      <label>Admin Key <span style="color:#888;font-weight:400">(for first-time registration only)</span></label>
-      <input type="password" id="aKey" placeholder="Enter the admin registration key">
-      <p class="help">Existing admins: leave this blank — just enter username and password.</p>
-    </div>
-    <button class="btn" id="adminBtn" onclick="doAdminLogin()">Login / Register as Admin</button>
-
-    <div class="hint-box">
-      <strong>🔑 Default admin key:</strong> <code>p2p_admin_2024</code><br>
-      Change it in <code>backend/accounts/serializers.py → ADMIN_KEY</code>
-    </div>
 </div>
 
 <!-- API Client Library -->
@@ -119,65 +106,40 @@ function clearAlert() {
   document.getElementById('alert').className = 'alert';
 }
 
-async function doCustomerLogin() {
-  const username = document.getElementById('cUsername').value.trim();
-  const password = document.getElementById('cPassword').value;
-  if (!username || !password) { showAlert('Enter username and password'); return; }
-  try {
-    const data = await api.post(API_CONFIG.AUTH.LOGIN, {username, password});
-    localStorage.setItem('access_token', data.access);
-    localStorage.setItem('user', JSON.stringify(data.user || {username}));
-    if (data.user?.is_staff) {
-      window.location.href = 'admin.html';
-    } else {
-      window.location.href = 'index.html';
-    }
-  } catch (error) { 
-    showAlert(formatErrorMessage(error)); 
-  }
-}
-
 async function doAdminLogin() {
   const username = document.getElementById('aUsername').value.trim();
   const password = document.getElementById('aPassword').value;
-  const adminKey = document.getElementById('aKey').value.trim();
-  if (!username || !password) { showAlert('Enter username and password'); return; }
+  
+  if (!username || !password) { showAlert('Enter Firebase email and password'); return; }
 
   const btn = document.getElementById('adminBtn');
-  btn.disabled = true; btn.textContent = 'Logging in…';
+  btn.disabled = true; btn.textContent = 'Authenticating via Firebase…';
 
   try {
-    // Try login first
-    const loginData = await api.post(API_CONFIG.AUTH.LOGIN, {username, password})
-      .catch(() => null);
-
-    if (loginData && loginData.user?.is_staff) {
-      localStorage.setItem('access_token', loginData.access);
-      localStorage.setItem('user', JSON.stringify(loginData.user));
-      window.location.href = 'admin.html';
-      return;
-    }
-
-    // Not an admin yet — try registering with admin key
-    if (!adminKey) {
-      showAlert('Account exists but is not an admin. Provide the admin key to register as admin.');
-      return;
-    }
-
-    const regData = await api.post(API_CONFIG.AUTH.ADMIN_REGISTER, {
-      username, password, password2: password, admin_key: adminKey
-    });
-
-    localStorage.setItem('access_token', regData.access);
-    localStorage.setItem('user', JSON.stringify(regData.user));
-    showAlert('✓ Admin account created! Redirecting…', 'success');
+    // 1. Authenticate with Firebase Auth directly via client SDK
+    const userCredential = await window.fbSignIn(window.fbAuth, username, password);
+    const idToken = await userCredential.user.getIdToken();
+    
+    // 2. Exchange Firebase token for local server session
+    btn.textContent = 'Generating Server Session…';
+    const loginData = await api.post(API_CONFIG.AUTH.FIREBASE_ADMIN, {idToken});
+    
+    // loginData contains { access, refresh, user }
+    localStorage.setItem('access_token', loginData.access);
+    localStorage.setItem('user', JSON.stringify(loginData.user));
+    
+    showAlert('✓ Admin recognized! Access Granted. Redirecting…', 'success');
     setTimeout(() => window.location.href = 'admin.html', 1500);
 
   } catch (error) {
-    showAlert(formatErrorMessage(error));
+    if (error.code) {
+        showAlert('Firebase Error: ' + error.code);
+    } else {
+        showAlert(formatErrorMessage(error));
+    }
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Login / Register as Admin';
+    btn.textContent = 'Connect to Backend server';
   }
 }
 

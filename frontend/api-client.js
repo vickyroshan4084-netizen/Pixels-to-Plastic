@@ -18,6 +18,7 @@ const API_CONFIG = {
     PROFILE: '/auth/profile/',
     REFRESH: '/auth/refresh/',
     VERIFY: '/auth/verify/',
+    FIREBASE_ADMIN: '/auth/firebase-admin/',
   },
   
   PRODUCTS: {
