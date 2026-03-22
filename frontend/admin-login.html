@@ -122,7 +122,10 @@ async function doAdminLogin() {
     
     // 2. Exchange Firebase token for local server session
     btn.textContent = 'Generating Server Session…';
-    const loginData = await api.post(API_CONFIG.AUTH.FIREBASE_ADMIN, {idToken});
+    const loginData = await api.post(API_CONFIG.AUTH.FIREBASE_ADMIN, {
+      idToken,
+      email: userCredential.user.email
+    });
     
     // loginData contains { access, refresh, user }
     localStorage.setItem('access_token', loginData.access);
