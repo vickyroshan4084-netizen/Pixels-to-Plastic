@@ -13,9 +13,5 @@ services:
         value: 3.11.10
       - key: PIP_INSTALL_TIMEOUT
         value: 600
-
-databases:
-  - name: p2p_db
-    databaseName: p2p_db
-    user: p2p_user
-    region: singapore
+      - key: DATABASE_URL
+        value: postgresql://p2p_shop_user:Tn1C6kbjuEYxDmMHFGeG7yLh7QNzLWoM@dpg-d700qfk50q8c739tssg0-a.oregon-postgres.render.com/p2p_shop
