@@ -1,5 +1,7 @@
 /**
  * API Configuration & Constants
+ * Triggering Vercel Redeploy
+
  * Centralized API endpoint configuration for frontend
  * This file is imported by all frontend pages
  */
